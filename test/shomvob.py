@@ -1,4 +1,5 @@
 import requests
+from bs4 import BeautifulSoup
 from loguru import logger
 from common.enumeration.shom_enum import ShomConst
 
@@ -24,9 +25,9 @@ class ShomConst:
         else:
             return ""
 
-def post_data(url, headers):
+def post_data(url, headers, params={}):
     try:
-        response = requests.post(url, headers=headers)
+        response = requests.post(url, headers=headers, json=params)
         response.raise_for_status()  # Raise an error for bad status codes (4xx, 5xx)
         return response.json()  # Return the parsed JSON response
     except requests.exceptions.RequestException as e:
@@ -34,6 +35,9 @@ def post_data(url, headers):
         return None
 
 def fetch_data_list():
+    """
+    shomvob 所有filter的ID和英文描述映射
+    """
     url = "https://iuazegsorvopdfkveycu.supabase.co/rest/v1/rpc/public_data_list_with_topic_name"
     api_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQyNDkxMTc4LCJleHAiOjE5NTgwNjcxNzh9.Oz-apWdllp2W8JlB4oGG0mF5QJnrN4vDOzk6BkJlSH4"
     headers = {
@@ -46,9 +50,9 @@ def fetch_data_list():
         filter_list = data[0]
 
         job_type_list = filter_list.get("job_type")
-        data_map = {}
+        job_type_map = {}
         for info in job_type_list:
-            data_map[info.get("id")] = info.get("job_type_en")
+            job_type_map[info.get("id")] = info.get("job_type_en")
 
         district_list = filter_list.get("district")
         district_map = {}
@@ -72,18 +76,46 @@ def fetch_data_list():
             work_experience_map[info.get("id")] = info.get("work_experience_en")
 
         filterData = ShomConst()
-        filterData.job_type_map = data_map
-        filterData.job_division_map = data_map
-        filterData.job_district_map = data_map
-        filterData.job_work_exp_map = data_map
-        filterData.education_map = data_map
+        filterData.job_type_map = job_type_map
+        filterData.job_division_map = division_map
+        filterData.job_district_map = district_map
+        filterData.job_work_exp_map = work_experience_map
+        filterData.education_map = education_map
         return filterData
+    return None
+
+def fetch_single_job_detail(job_id):
+    url = "https://iuazegsorvopdfkveycu.supabase.co/rest/v1/rpc/get_single_job_description_guest_new_v2"
+    api_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQyNDkxMTc4LCJleHAiOjE5NTgwNjcxNzh9.Oz-apWdllp2W8JlB4oGG0mF5QJnrN4vDOzk6BkJlSH4"
+    headers = {
+        "accept": "application/json, text/plain, */*",
+        "apikey": api_key,
+        "content-type": "application/json"
+    }
+    param = {"job_id_data": job_id}
+    data = post_data(url, headers, param)
+    if data:
+        print(data)
+        return data
+    else:
+        return None
+
+
+def parse_html(html):
+    try:
+        soup = BeautifulSoup(html, "html.parser")
+        raw_text = soup.get_text(separator=",", strip=True)
+        print(len(raw_text))
+        return raw_text
+    except Exception as e:
+        logger.error(e)
+        return None
+
 
 
 if __name__ == "__main__":
     # Call the function and print the response
     data = fetch_data_list()
-
     holder = []
     for id, typeName in data.job_type_map.items():
         tmp = {}
@@ -91,7 +123,9 @@ if __name__ == "__main__":
         tmp["job_type"] = typeName
         holder.append(tmp)
 
-    listMap_to_csv(holder, "/Users/zec/Downloads/shomvob.csv")
-
-
+    # listMap_to_csv(holder, "/Users/zec/Downloads/shomvob.csv")
+    test = fetch_single_job_detail(12938)
+    test = test[0]
+    logger.info(test.get("job_title"))
+    logger.info(data.job_district_map.get(test.get("district_id")[0].get("id")))
 
