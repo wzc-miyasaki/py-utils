@@ -1,5 +1,3 @@
-from macholib.mach_o import source_version_command
-
 from third_api.bright_data_api import BrightDataAPIClient
 import time
 
