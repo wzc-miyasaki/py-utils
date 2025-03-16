@@ -100,6 +100,16 @@ def fetch_single_job_detail(job_id):
     else:
         return None
 
+def fetch_job_list():
+    url = "https://iuazegsorvopdfkveycu.supabase.co/rest/v1/rpc/custom_job_listing_guest"
+    api_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQyNDkxMTc4LCJleHAiOjE5NTgwNjcxNzh9.Oz-apWdllp2W8JlB4oGG0mF5QJnrN4vDOzk6BkJlSH4"
+    headers = {
+        "accept": "application/json, text/plain, */*",
+        "apikey": api_key,
+        "content-type": "application/json"
+    }
+    data = post_data(url, headers)
+    return data
 
 def parse_html(html):
     try:
@@ -123,9 +133,11 @@ if __name__ == "__main__":
         tmp["job_type"] = typeName
         holder.append(tmp)
 
-    # listMap_to_csv(holder, "/Users/zec/Downloads/shomvob.csv")
-    test = fetch_single_job_detail(12938)
-    test = test[0]
-    logger.info(test.get("job_title"))
-    logger.info(data.job_district_map.get(test.get("district_id")[0].get("id")))
+    # 获取岗位列表
+    data = fetch_job_list()
+    if data:
+        print(len(data))
+        for info in data:
+            print(f"{info.get('id')} : {info.get('job_title')}")
+
 
